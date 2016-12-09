@@ -715,12 +715,14 @@ angular.module('ui.scroll', [])
 
         const fetchPrevious = (datasource.get.length !== 2) ? (success) => {
 
-          let count = bufferSize - (bufferSize % numberOfItemsInRow) + numberOfItemsInRow;
+          let count = bufferSize - (bufferSize % numberOfItemsInRow);
+          if (buffer.first - count < 0) count +=  buffer.first - count;
           datasource.get(buffer.first - count, count, success);
 
         } : (success) => {
 
-          let count = bufferSize - (bufferSize % numberOfItemsInRow) + numberOfItemsInRow;
+          let count = bufferSize - (bufferSize % numberOfItemsInRow);
+          if (buffer.first - count < 0) count +=  buffer.first - count;
           datasource.get({
             index: buffer.first - count,
             prepend: buffer.length ? buffer[0].item : void 0,

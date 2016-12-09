@@ -1,7 +1,7 @@
 /*!
  * angular-ui-scroll
  * https://github.com/angular-ui/ui-scroll.git
- * Version: 1.5.2 -- 2016-12-09T03:53:43.536Z
+ * Version: 1.5.2 -- 2016-12-09T05:37:12.734Z
  * License: MIT
  */
  
@@ -720,11 +720,13 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
 
     var fetchPrevious = datasource.get.length !== 2 ? function (success) {
 
-      var count = bufferSize - bufferSize % numberOfItemsInRow + numberOfItemsInRow;
+      var count = bufferSize - bufferSize % numberOfItemsInRow;
+      if (buffer.first - count < 0) count += buffer.first - count;
       datasource.get(buffer.first - count, count, success);
     } : function (success) {
 
-      var count = bufferSize - bufferSize % numberOfItemsInRow + numberOfItemsInRow;
+      var count = bufferSize - bufferSize % numberOfItemsInRow;
+      if (buffer.first - count < 0) count += buffer.first - count;
       datasource.get({
         index: buffer.first - count,
         prepend: buffer.length ? buffer[0].item : void 0,
