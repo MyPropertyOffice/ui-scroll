@@ -1,7 +1,7 @@
 /*!
  * angular-ui-scroll
  * https://github.com/angular-ui/ui-scroll.git
- * Version: 1.5.2 -- 2016-11-18T00:26:15.332Z
+ * Version: 1.5.2 -- 2016-12-09T03:53:43.536Z
  * License: MIT
  */
  
@@ -37,12 +37,10 @@ angular.module('ui.scroll.jqlite', ['ui.scroll']).service('jqLiteExtras', ['$log
         var _top$left$direction = _slicedToArray({
           top: ['scrollTop', 'pageYOffset', 'scrollLeft'],
           left: ['scrollLeft', 'pageXOffset', 'scrollTop']
-        }[direction], 3);
-
-        var method = _top$left$direction[0];
-        var prop = _top$left$direction[1];
-        var preserve = _top$left$direction[2];
-
+        }[direction], 3),
+            method = _top$left$direction[0],
+            prop = _top$left$direction[1],
+            preserve = _top$left$direction[2];
 
         if (isWindow(elem)) {
           if (angular.isDefined(value)) {
@@ -71,11 +69,11 @@ angular.module('ui.scroll.jqlite', ['ui.scroll']).service('jqLiteExtras', ['$log
           return elem.currentStyle;
         };
         convertToPx = function convertToPx(elem, value) {
-          var left = undefined,
-              result = undefined,
-              rs = undefined,
-              rsLeft = undefined,
-              style = undefined;
+          var left = void 0,
+              result = void 0,
+              rs = void 0,
+              rsLeft = void 0,
+              style = void 0;
           var core_pnum = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source;
           var rnumnonpx = new RegExp('^(' + core_pnum + ')(?!px)[a-z%]+$', 'i');
 
@@ -103,18 +101,18 @@ angular.module('ui.scroll.jqlite', ['ui.scroll']).service('jqLiteExtras', ['$log
       }
 
       function getMeasurements(elem, measure) {
-        var base = undefined,
-            borderA = undefined,
-            borderB = undefined,
-            computedMarginA = undefined,
-            computedMarginB = undefined,
-            computedStyle = undefined,
-            dirA = undefined,
-            dirB = undefined,
-            marginA = undefined,
-            marginB = undefined,
-            paddingA = undefined,
-            paddingB = undefined;
+        var base = void 0,
+            borderA = void 0,
+            borderB = void 0,
+            computedMarginA = void 0,
+            computedMarginB = void 0,
+            computedStyle = void 0,
+            dirA = void 0,
+            dirB = void 0,
+            marginA = void 0,
+            marginB = void 0,
+            paddingA = void 0,
+            paddingB = void 0;
 
         if (isWindow(elem)) {
           base = document.documentElement[{ height: 'clientHeight', width: 'clientWidth' }[measure]];
@@ -163,8 +161,8 @@ angular.module('ui.scroll.jqlite', ['ui.scroll']).service('jqLiteExtras', ['$log
       }
 
       function getWidthHeight(elem, direction, measure) {
-        var computedStyle = undefined,
-            result = undefined;
+        var computedStyle = void 0,
+            result = void 0;
 
         var measurements = getMeasurements(elem, direction);
 
@@ -238,8 +236,8 @@ angular.module('ui.scroll.jqlite', ['ui.scroll']).service('jqLiteExtras', ['$log
          The offset setter method is not implemented
          */
         offset: function offset(value) {
-          var docElem = undefined,
-              win = undefined;
+          var docElem = void 0,
+              win = void 0;
           var self = this;
           var box = {
             top: 0,

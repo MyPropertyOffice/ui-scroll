@@ -1,7 +1,7 @@
 /*!
  * angular-ui-scroll
  * https://github.com/angular-ui/ui-scroll.git
- * Version: 1.5.2 -- 2016-11-18T00:26:15.332Z
+ * Version: 1.5.2 -- 2016-12-09T03:53:43.536Z
  * License: MIT
  */
  
@@ -9,7 +9,7 @@
  (function () {
 'use strict';
 
-var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === 'function' && obj.constructor === Symbol ? 'symbol' : typeof obj; };
+var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj; };
 
 /*!
  globals: angular, window
@@ -38,9 +38,11 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
       });
     }]
   };
-}).directive('uiScroll', ['$log', '$injector', '$rootScope', '$timeout', '$q', '$parse', function (console, $injector, $rootScope, $timeout, $q, $parse) {
+}).directive('uiScroll', ['$log', '$injector', '$rootScope', '$timeout', '$q', '$parse', '$window', function (console, $injector, $rootScope, $timeout, $q, $parse, $window) {
   var $animate = $injector.has && $injector.has('$animate') ? $injector.get('$animate') : null;
   var isAngularVersionLessThen1_3 = angular.version.major === 1 && angular.version.minor < 3;
+
+  var numberOfItemsInRow = 0;
 
   return {
     require: ['?^^uiScrollViewport'],
@@ -210,8 +212,8 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
   }
 
   function Viewport(buffer, element, viewportController, padding) {
-    var topPadding = undefined;
-    var bottomPadding = undefined;
+    var topPadding = void 0;
+    var bottomPadding = void 0;
     var viewport = viewportController && viewportController.viewport ? viewportController.viewport : angular.element(window);
     var container = viewportController && viewportController.container ? viewportController.container : undefined;
 
@@ -245,7 +247,7 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
     }
 
     function Padding(template) {
-      var result = undefined;
+      var result = void 0;
 
       switch (template.tagName) {
         case 'dl':
@@ -304,20 +306,31 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
         return !buffer.eof && viewport.bottomDataPos() < viewport.bottomVisiblePos() + bufferPadding();
       },
       clipBottom: function clipBottom() {
+
+        if (numberOfItemsInRow === 0) return;
+
         // clip the invisible items off the bottom
         var overage = 0;
         var overageHeight = 0;
         var itemHeight = 0;
         var emptySpaceHeight = viewport.bottomDataPos() - viewport.bottomVisiblePos() - bufferPadding();
 
-        for (var i = buffer.length - 1; i >= 0; i--) {
+        for (var i = buffer.length - 1; i >= 0;) {
           itemHeight = buffer[i].element.outerHeight(true);
           if (overageHeight + itemHeight > emptySpaceHeight) {
             break;
           }
-          bottomPadding.cache.add(buffer[i]);
+
+          //  Dont get negative etc
+          var itemsInCurrentRow = Math.min((buffer.length - overage) % numberOfItemsInRow || numberOfItemsInRow, buffer.length - overage);
+
+          for (var j = 0; j < itemsInCurrentRow; j++) {
+            bottomPadding.cache.add(buffer[i - j]);
+          }
+
+          i -= itemsInCurrentRow;
           overageHeight += itemHeight;
-          overage++;
+          overage += itemsInCurrentRow;
         }
 
         if (overage > 0) {
@@ -331,20 +344,42 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
         return !buffer.bof && viewport.topDataPos() > viewport.topVisiblePos() - bufferPadding();
       },
       clipTop: function clipTop() {
+        if (numberOfItemsInRow === 0) return;
+
         // clip the invisible items off the top
         var overage = 0;
         var overageHeight = 0;
         var itemHeight = 0;
         var emptySpaceHeight = viewport.topVisiblePos() - viewport.topDataPos() - bufferPadding();
+        var j = 0;
 
-        for (var i = 0; i < buffer.length; i++) {
+        for (var i = 0; i < buffer.length;) {
           itemHeight = buffer[i].element.outerHeight(true);
           if (overageHeight + itemHeight > emptySpaceHeight) {
             break;
           }
-          topPadding.cache.add(buffer[i]);
-          overageHeight += itemHeight;
-          overage++;
+
+          for (j = 0; j < numberOfItemsInRow; j++) {
+            // Fixes bug when buffer is relativly small, cache is filled with 200+ items 
+            // and someone scrolls really fast to top and then to bottom. Buffer can run out of elements
+            if (buffer[i + j]) {
+              topPadding.cache.add(buffer[i + j]);
+            } else {
+              break;
+            }
+          }
+
+          // Fixes bug when buffer is relativly small, cache is filled with 200+ items 
+          // and someone scrolls really fast to top and then to bottom. Buffer can run out of elements
+          if (j === numberOfItemsInRow) {
+            i += numberOfItemsInRow;
+            overageHeight += itemHeight;
+            overage += numberOfItemsInRow;
+          } else {
+            if (j > 0) overageHeight += itemHeight;
+            overage += j - 1;
+            break;
+          }
         }
 
         if (overage > 0) {
@@ -357,20 +392,23 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
         }
       },
       adjustPadding: function adjustPadding() {
-        if (!buffer.length) return;
+
+        if (!buffer.length || !numberOfItemsInRow) return;
 
         // precise heights calculation, items that were in buffer once
         var topPaddingHeight = topPadding.cache.reduce(function (summ, item) {
-          return summ + (item.index < buffer.first ? item.height : 0);
+          return summ + (item.index < buffer.first && item.index % numberOfItemsInRow == 1 ? item.height : 0);
         }, 0);
+        //topPadding.cache.forEach((item) => console.log(item.top));
         var bottomPaddingHeight = bottomPadding.cache.reduce(function (summ, item) {
-          return summ + (item.index >= buffer.next ? item.height : 0);
+          return summ + (item.index >= buffer.next && item.index % numberOfItemsInRow == 1 ? item.height : 0);
         }, 0);
 
         // average item height based on buffer data
         var visibleItemsHeight = buffer.reduce(function (summ, item) {
-          return summ + item.element.outerHeight(true);
+          return summ + (item.index % numberOfItemsInRow == 1 ? item.element.outerHeight(true) : 0);
         }, 0);
+        // let averageItemHeight = (visibleItemsHeight + topPaddingHeight + bottomPaddingHeight) / (4 * (buffer.maxIndex - buffer.minIndex + 1));
         var averageItemHeight = (visibleItemsHeight + topPaddingHeight + bottomPaddingHeight) / (buffer.maxIndex - buffer.minIndex + 1);
 
         // average heights calculation, items that have never been reached
@@ -483,11 +521,11 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
     };
 
     this.calculateProperties = function () {
-      var item = undefined,
-          itemHeight = undefined,
-          itemTop = undefined,
-          isNewRow = undefined,
-          rowTop = undefined;
+      var item = void 0,
+          itemHeight = void 0,
+          itemTop = void 0,
+          isNewRow = void 0,
+          rowTop = void 0;
       var topHeight = 0;
       for (var i = 0; i < buffer.length; i++) {
         item = buffer[i];
@@ -515,7 +553,7 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
     function createValueInjector(attribute) {
       var expression = $attr[attribute];
       var scope = viewportScope;
-      var assign = undefined;
+      var assign = void 0;
       if (expression) {
         // it is ok to have relaxed validation for the first part of the 'on' expression.
         // additional validation will be done by the $parse service below
@@ -552,7 +590,7 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
           }
         } else {
           // try to parse DOM with 'Controller As' syntax (adapter='ctrl.adapter')
-          var controllerAsName = undefined;
+          var controllerAsName = void 0;
           var dotIndex = target.indexOf('.');
           if (dotIndex > 0) {
             controllerAsName = target.substr(0, dotIndex);
@@ -574,7 +612,7 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
         return;
       }
 
-      var keepIt = undefined;
+      var keepIt = void 0;
       var pos = buffer.indexOf(wrapper) + 1;
 
       newItems.reverse().forEach(function (newItem) {
@@ -593,6 +631,13 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
   }
 
   function link($scope, element, $attr, controllers, linker) {
+
+    // Add calculateNumberOfItemsInRow on resize event
+    $scope.$on('$destroy', function () {
+      $window.off('resize', $scope.sizeNotifier);
+    });
+    $scope.sizeNotifier = onResizeHandler;
+    $window.onresize = $scope.sizeNotifier;
 
     var match = $attr.uiScroll.match(/^\s*(\w+)\s+in\s+([(\w|\$)\.]+)\s*$/);
     if (!match) {
@@ -674,12 +719,16 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
     };
 
     var fetchPrevious = datasource.get.length !== 2 ? function (success) {
-      return datasource.get(buffer.first - bufferSize, bufferSize, success);
+
+      var count = bufferSize - bufferSize % numberOfItemsInRow + numberOfItemsInRow;
+      datasource.get(buffer.first - count, count, success);
     } : function (success) {
+
+      var count = bufferSize - bufferSize % numberOfItemsInRow + numberOfItemsInRow;
       datasource.get({
-        index: buffer.first - bufferSize,
+        index: buffer.first - count,
         prepend: buffer.length ? buffer[0].item : void 0,
-        count: bufferSize
+        count: count
       }, success);
     };
 
@@ -766,7 +815,7 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
     }
 
     function createElement(wrapper, insertAfter, insertElement) {
-      var promises = undefined;
+      var promises = void 0;
       var sibling = insertAfter > 0 ? buffer[insertAfter - 1].element : undefined;
       linker(function (clone, scope) {
         promises = insertElement(clone, sibling);
@@ -817,6 +866,10 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
       buffer.forEach(function (item, i) {
         return item.scope.$index = buffer.first + i;
       });
+
+      if (numberOfItemsInRow === 0) {
+        calculateNumberOfItemsInRow();
+      }
 
       return {
         prepended: toBePrepended,
@@ -958,7 +1011,7 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
               return;
             }
 
-            if (result.length < bufferSize) {
+            if (result.length < bufferSize - bufferSize % numberOfItemsInRow) {
               buffer.bof = true;
               // log 'bof is reached'
             }
@@ -977,6 +1030,7 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
     }
 
     function resizeAndScrollHandler() {
+
       if (!$rootScope.$$phase && !adapter.isLoading && !adapter.disabled) {
 
         enqueueFetch(ridActual);
@@ -987,6 +1041,29 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
           adapter.calculateProperties();
           $scope.$apply();
         }
+      }
+    }
+
+    function onResizeHandler() {
+      calculateNumberOfItemsInRow();
+      resizeAndScrollHandler();
+    }
+
+    // TODO Multiple elements per row only supported with ul/li tags for now
+    function calculateNumberOfItemsInRow() {
+      if (viewport.find('ul').length === 1) {
+        var items = viewport[0].querySelectorAll('li:not(.ng-hide)');
+        if (items.length > 1) {
+          var firstOffsetTop = items[0].offsetTop;
+          for (var i = 1; i < items.length; i++) {
+            if (items[i].offsetTop !== firstOffsetTop) {
+              numberOfItemsInRow = i;
+              break;
+            }
+          }
+        }
+      } else {
+        numberOfItemsInRow = 1;
       }
     }
 
