@@ -631,7 +631,7 @@ angular.module('ui.scroll', [])
 
         // Add calculateNumberOfItemsInRow on resize event
         $scope.$on('$destroy', function () {
-            $window.off('resize', $scope.sizeNotifier);
+            $window.onresize = undefined;
         });
         $scope.sizeNotifier = onResizeHandler;
         $window.onresize = $scope.sizeNotifier;

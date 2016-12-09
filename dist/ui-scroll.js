@@ -1,7 +1,7 @@
 /*!
  * angular-ui-scroll
  * https://github.com/angular-ui/ui-scroll.git
- * Version: 1.5.2 -- 2016-12-09T06:58:59.618Z
+ * Version: 1.5.2 -- 2016-12-09T07:10:41.536Z
  * License: MIT
  */
  
@@ -634,7 +634,7 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
 
     // Add calculateNumberOfItemsInRow on resize event
     $scope.$on('$destroy', function () {
-      $window.off('resize', $scope.sizeNotifier);
+      $window.onresize = undefined;
     });
     $scope.sizeNotifier = onResizeHandler;
     $window.onresize = $scope.sizeNotifier;
