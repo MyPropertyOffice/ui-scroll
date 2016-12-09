@@ -715,13 +715,13 @@ angular.module('ui.scroll', [])
 
         const fetchPrevious = (datasource.get.length !== 2) ? (success) => {
 
-          let count = bufferSize - (bufferSize % numberOfItemsInRow);
+          let count = bufferSize - (bufferSize % (numberOfItemsInRow || bufferSize));
           if (buffer.first - count < 0) count +=  buffer.first - count;
           datasource.get(buffer.first - count, count, success);
 
         } : (success) => {
 
-          let count = bufferSize - (bufferSize % numberOfItemsInRow);
+          let count = bufferSize - (bufferSize % (numberOfItemsInRow || bufferSize));
           if (buffer.first - count < 0) count +=  buffer.first - count;
           datasource.get({
             index: buffer.first - count,
@@ -862,11 +862,7 @@ angular.module('ui.scroll', [])
             });
 
           buffer.forEach((item, i) => item.scope.$index = buffer.first + i);
-
-          if (numberOfItemsInRow === 0) {
-            calculateNumberOfItemsInRow();
-          }
-
+          
           return {
             prepended: toBePrepended,
             removed: toBeRemoved,
@@ -935,6 +931,7 @@ angular.module('ui.scroll', [])
             if (!pending.length) {
               adapter.calculateProperties();
             }
+            
           });
         }
 
@@ -964,6 +961,9 @@ angular.module('ui.scroll', [])
               adapter.loading(false);
               bindEvents();
               adapter.calculateProperties();
+              if (numberOfItemsInRow === 0) {
+                calculateNumberOfItemsInRow();
+              }
             }
           });
         }
@@ -999,7 +999,11 @@ angular.module('ui.scroll', [])
                   return;
                 }
 
-                if (result.length < (bufferSize - (bufferSize % numberOfItemsInRow))) {
+                if (numberOfItemsInRow === 0) {
+                  if (result.length < bufferSize) {
+                    buffer.bof = true;
+                  } 
+                } else if (result.length < (bufferSize - (bufferSize % numberOfItemsInRow))) {
                   buffer.bof = true;
                   // log 'bof is reached'
                 }

@@ -1,7 +1,7 @@
 /*!
  * angular-ui-scroll
  * https://github.com/angular-ui/ui-scroll.git
- * Version: 1.5.2 -- 2016-12-09T05:46:45.357Z
+ * Version: 1.5.2 -- 2016-12-09T06:58:59.618Z
  * License: MIT
  */
  
@@ -720,12 +720,12 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
 
     var fetchPrevious = datasource.get.length !== 2 ? function (success) {
 
-      var count = bufferSize - bufferSize % numberOfItemsInRow;
+      var count = bufferSize - bufferSize % (numberOfItemsInRow || bufferSize);
       if (buffer.first - count < 0) count += buffer.first - count;
       datasource.get(buffer.first - count, count, success);
     } : function (success) {
 
-      var count = bufferSize - bufferSize % numberOfItemsInRow;
+      var count = bufferSize - bufferSize % (numberOfItemsInRow || bufferSize);
       if (buffer.first - count < 0) count += buffer.first - count;
       datasource.get({
         index: buffer.first - count,
@@ -869,10 +869,6 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
         return item.scope.$index = buffer.first + i;
       });
 
-      if (numberOfItemsInRow === 0) {
-        calculateNumberOfItemsInRow();
-      }
-
       return {
         prepended: toBePrepended,
         removed: toBeRemoved,
@@ -976,6 +972,9 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
           adapter.loading(false);
           bindEvents();
           adapter.calculateProperties();
+          if (numberOfItemsInRow === 0) {
+            calculateNumberOfItemsInRow();
+          }
         }
       });
     }
@@ -1013,7 +1012,11 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
               return;
             }
 
-            if (result.length < bufferSize - bufferSize % numberOfItemsInRow) {
+            if (numberOfItemsInRow === 0) {
+              if (result.length < bufferSize) {
+                buffer.bof = true;
+              }
+            } else if (result.length < bufferSize - bufferSize % numberOfItemsInRow) {
               buffer.bof = true;
               // log 'bof is reached'
             }
