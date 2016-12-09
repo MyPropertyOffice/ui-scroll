@@ -218,13 +218,13 @@ angular.module('ui.scroll', [])
             add(item) {
               for(let i = cache.length - 1; i >= 0; i--) {
                 if(cache[i].index === item.scope.$index) {
-                  cache[i].height = item.element.outerHeight();
+                  cache[i].height = item.element.outerHeight(true);
                   return;
                 }
               }
               cache.push({
                 index: item.scope.$index,
-                height: item.element.outerHeight(),
+                height: item.element.outerHeight(true),
               });
             },
             clear() {
