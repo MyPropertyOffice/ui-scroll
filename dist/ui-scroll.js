@@ -1,7 +1,7 @@
 /*!
  * angular-ui-scroll
  * https://github.com/angular-ui/ui-scroll.git
- * Version: 1.5.2 -- 2016-12-09T07:10:41.536Z
+ * Version: 1.5.2 -- 2016-12-09T10:55:20.917Z
  * License: MIT
  */
  
@@ -396,18 +396,46 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
         if (!buffer.length || !numberOfItemsInRow) return;
 
         // precise heights calculation, items that were in buffer once
-        var topPaddingHeight = topPadding.cache.reduce(function (summ, item) {
-          return summ + (item.index < buffer.first && item.index % numberOfItemsInRow == 1 ? item.height : 0);
-        }, 0);
+        var topPaddingHeight = void 0;
+        var bottomPaddingHeight = void 0;
+
+        if (numberOfItemsInRow === 1) {
+          topPaddingHeight = topPadding.cache.reduce(function (summ, item) {
+            return summ + (item.index < buffer.first ? item.height : 0);
+          }, 0);
+          bottomPaddingHeight = bottomPadding.cache.reduce(function (summ, item) {
+            return summ + (item.index >= buffer.next ? item.height : 0);
+          }, 0);
+        } else {
+          topPaddingHeight = topPadding.cache.reduce(function (summ, item) {
+            return summ + (item.index < buffer.first && item.index % numberOfItemsInRow == 1 ? item.height : 0);
+          }, 0);
+          bottomPaddingHeight = bottomPadding.cache.reduce(function (summ, item) {
+            return summ + (item.index >= buffer.next && item.index % numberOfItemsInRow == 1 ? item.height : 0);
+          }, 0);
+        }
         //topPadding.cache.forEach((item) => console.log(item.top));
-        var bottomPaddingHeight = bottomPadding.cache.reduce(function (summ, item) {
-          return summ + (item.index >= buffer.next && item.index % numberOfItemsInRow == 1 ? item.height : 0);
-        }, 0);
+        if (numberOfItemsInRow === 1) {
+          bottomPaddingHeight = bottomPadding.cache.reduce(function (summ, item) {
+            return summ + (item.index >= buffer.next ? item.height : 0);
+          }, 0);
+        } else {
+          bottomPaddingHeight = bottomPadding.cache.reduce(function (summ, item) {
+            return summ + (item.index >= buffer.next && item.index % numberOfItemsInRow == 1 ? item.height : 0);
+          }, 0);
+        }
 
         // average item height based on buffer data
-        var visibleItemsHeight = buffer.reduce(function (summ, item) {
-          return summ + (item.index % numberOfItemsInRow == 1 ? item.element.outerHeight(true) : 0);
-        }, 0);
+        var visibleItemsHeight = void 0;
+        if (numberOfItemsInRow === 1) {
+          visibleItemsHeight = buffer.reduce(function (summ, item) {
+            return summ + item.element.outerHeight(true);
+          }, 0);
+        } else {
+          visibleItemsHeight = buffer.reduce(function (summ, item) {
+            return summ + (item.index % numberOfItemsInRow == 1 ? item.element.outerHeight(true) : 0);
+          }, 0);
+        }
         // let averageItemHeight = (visibleItemsHeight + topPaddingHeight + bottomPaddingHeight) / (4 * (buffer.maxIndex - buffer.minIndex + 1));
         var averageItemHeight = (visibleItemsHeight + topPaddingHeight + bottomPaddingHeight) / (buffer.maxIndex - buffer.minIndex + 1);
 

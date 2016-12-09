@@ -404,12 +404,30 @@ angular.module('ui.scroll', [])
               return;
 
             // precise heights calculation, items that were in buffer once
-            let topPaddingHeight = topPadding.cache.reduce((summ, item) => summ + ((item.index < buffer.first && item.index % numberOfItemsInRow == 1 ) ? item.height : 0), 0);
+            let topPaddingHeight;
+            let bottomPaddingHeight;
+
+            if (numberOfItemsInRow === 1) {
+              topPaddingHeight = topPadding.cache.reduce((summ, item) => summ + ((item.index < buffer.first) ? item.height : 0), 0);
+              bottomPaddingHeight = bottomPadding.cache.reduce((summ, item) => summ + ((item.index >= buffer.next) ? item.height : 0), 0);
+            } else {
+              topPaddingHeight = topPadding.cache.reduce((summ, item) => summ + ((item.index < buffer.first && item.index % numberOfItemsInRow == 1 ) ? item.height : 0), 0);
+              bottomPaddingHeight = bottomPadding.cache.reduce((summ, item) => summ + ((item.index >= buffer.next && item.index % numberOfItemsInRow == 1 ) ? item.height : 0), 0);
+            }
             //topPadding.cache.forEach((item) => console.log(item.top));
-            let bottomPaddingHeight = bottomPadding.cache.reduce((summ, item) => summ + ((item.index >= buffer.next && item.index % numberOfItemsInRow == 1 ) ? item.height : 0), 0);
+            if (numberOfItemsInRow === 1) {
+              bottomPaddingHeight = bottomPadding.cache.reduce((summ, item) => summ + ((item.index >= buffer.next) ? item.height : 0), 0);
+            } else {
+              bottomPaddingHeight = bottomPadding.cache.reduce((summ, item) => summ + ((item.index >= buffer.next && item.index % numberOfItemsInRow == 1 ) ? item.height : 0), 0);
+            }
 
             // average item height based on buffer data
-            let visibleItemsHeight = buffer.reduce((summ, item) => summ + ((item.index % numberOfItemsInRow == 1) ? item.element.outerHeight(true) : 0), 0);
+            let visibleItemsHeight;
+            if (numberOfItemsInRow === 1) {
+              visibleItemsHeight = buffer.reduce((summ, item) => summ + item.element.outerHeight(true), 0);
+            } else {
+              visibleItemsHeight = buffer.reduce((summ, item) => summ + ((item.index % numberOfItemsInRow == 1) ? item.element.outerHeight(true) : 0), 0);
+            }
             // let averageItemHeight = (visibleItemsHeight + topPaddingHeight + bottomPaddingHeight) / (4 * (buffer.maxIndex - buffer.minIndex + 1));
             let averageItemHeight = (visibleItemsHeight + topPaddingHeight + bottomPaddingHeight) / (buffer.maxIndex - buffer.minIndex + 1);
 
