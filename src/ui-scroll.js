@@ -653,6 +653,7 @@ angular.module('ui.scroll', [])
         });
         $scope.sizeNotifier = onResizeHandler;
         $window.onresize = $scope.sizeNotifier;
+        numberOfItemsInRow = 0;
 
 
         const match = $attr.uiScroll.match(/^\s*(\w+)\s+in\s+([(\w|\$)\.]+)\s*$/);

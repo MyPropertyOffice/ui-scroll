@@ -1,7 +1,7 @@
 /*!
  * angular-ui-scroll
  * https://github.com/angular-ui/ui-scroll.git
- * Version: 1.5.2 -- 2016-12-09T10:55:20.917Z
+ * Version: 1.5.2 -- 2016-12-09T11:37:50.853Z
  * License: MIT
  */
  
@@ -666,6 +666,7 @@ angular.module('ui.scroll', []).directive('uiScrollViewport', function () {
     });
     $scope.sizeNotifier = onResizeHandler;
     $window.onresize = $scope.sizeNotifier;
+    numberOfItemsInRow = 0;
 
     var match = $attr.uiScroll.match(/^\s*(\w+)\s+in\s+([(\w|\$)\.]+)\s*$/);
     if (!match) {
